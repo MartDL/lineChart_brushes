@@ -4,6 +4,7 @@ svg {
   width: 100%;
   display: block;
   background: rgb(231, 231, 231);
+  height: 300px;
 }
 
 text {

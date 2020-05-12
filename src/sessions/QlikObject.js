@@ -3,6 +3,7 @@ import { openSession } from '../qlikConnect/enigmaApp'
 import { def } from '../defs/def' 
 import { updateData } from'../utils/updateData'
 import LineChart from '../d3/LineChart'
+import SelectionChart from '../d3/SelectionChart'
 
 
 function QlikObject() {
@@ -36,9 +37,15 @@ function QlikObject() {
         init()
     }, [])
     return (
-        <div>
-         {data.length > 0 && <LineChart data={data} />}   
-        </div>
+        <>
+          <h1>Line Chart with brushes example</h1>
+          <br/>
+         {data.length > 0 && 
+            <LineChart data={data}>
+              {selection => <SelectionChart data={data} selection={selection}/> }
+            </LineChart>
+            }   
+        </>
     ) 
 }
 

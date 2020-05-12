@@ -6,13 +6,11 @@ import { select,
         line,
         axisBottom,
         axisRight,
-        event,
-        brushX
+        extent
     } from 'd3'
-import usePrevious from '../utils/hooks/usePrevious'
 import useResizeObserver from '../utils/hooks/useResizeObserver'
 
-function LineChart({ data, children }) {
+function LineChart({ data, selection }) {
 
     const myPath = data.map(d => d.measures[0].value)
     const labels = data.map(d => d.dimensions[0].value) // xAxis labels
@@ -20,16 +18,16 @@ function LineChart({ data, children }) {
     const svgRef = useRef()
     const wrapperRef = useRef()
     const dimensions = useResizeObserver(wrapperRef)
-    const [selection, setSelection] = useState([0, 1.5])
-    const previousSelection = usePrevious(selection)
 
     useEffect(() => {
         const svg = select(svgRef.current)
+        const content = svg.select(".content")
+
 
         if(!dimensions) return;
 
         const xScale = scaleLinear()
-            .domain([0, data.length - 1]) // scale of peices of data (ticks)
+            .domain(selection) // scale of peices of data (ticks)
             .range([0, dimensions.width]) // width of the SVG
 
         const yScale = scaleLinear()
@@ -37,7 +35,7 @@ function LineChart({ data, children }) {
             .range([dimensions.height, 0]) //height of the SVG
 
         const xAxis = axisBottom(xScale)
-            .ticks(data.length - 1)
+            .ticks(selection)
             .tickFormat((d,i) => labels[i]) // xAis labels used
             
          
@@ -63,7 +61,7 @@ function LineChart({ data, children }) {
             .curve(curveCardinal)
 
 
-        svg.selectAll('.line')
+        content.selectAll('.line')
             .data([myPath]) 
             .join('path')
             .attr('class', 'line')
@@ -72,7 +70,7 @@ function LineChart({ data, children }) {
             .attr('stroke', 'blue') 
 
 
-        svg.selectAll('.myDot')
+        content.selectAll('.myDot')
             .data(myPath)
             .join('circle')
             .attr('class', 'myDot')
@@ -81,44 +79,30 @@ function LineChart({ data, children }) {
             .attr('fill', (value,index) => index >= selection[0] && index <= selection[1] ? 'lime' : 'yellow' )
             .attr('cx', (value, index) => xScale(index))    
             .attr('cy', yScale)
+        
 
-        const brush = brushX().extent([
-            [0,0], 
-            [dimensions.width, dimensions.height]
-        ])
-        .on('start brush end', () => {
-            if (event.selection) {
-            const indexSelection = event.selection.map(xScale.invert)
-            setSelection(indexSelection)
-            console.log(indexSelection)
-            }
-        })
-
-        if (previousSelection === selection) {
-            svg.select('.brush')
-            .call(brush)
-            .call(brush.move, selection.map(xScale))
-        }
-
-    }, [data, dimensions, selection])
+    }, [data, dimensions, selection, labels, myPath])
 
 
     return (
         <>
         <div ref={wrapperRef} style={{ marginBottom: "2rem" }}>
             <svg ref={svgRef}>
+                <defs>
+                    <clipPath id="myClipPath">
+                        <rect x="0" y="0" width="100%" height="100%" />
+                    </clipPath>
+                </defs>
+                
+                <g className="content" clipPath="url(#myClipPath)" />
                 <g className="x-axis" />
                 <g className="y-axis" />
-                <g className="brush" />
              </svg>
         </div>
         <br />
         <br />
-        {children(selection)}
         </>
     )
 }
 
 export default LineChart
-
-
